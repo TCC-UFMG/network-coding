@@ -187,19 +187,29 @@ static int push_packet(packet_buffer* buffer, netcoding_packet* packet) {
 
 typedef struct netcoding_node_t {
     int id;
+    int prob_to_combine;
     packet_buffer outbound_buffer;
 } netcoding_node;
 
 extern netcoding_node network_coding_node;
 
 static inline void create_netcoding_node(int id) {
-    // node.outbound_buffer = 1;
     network_coding_node.id = id;
 }
 
+static inline void create_netcoding_combinatory_routing_node(int id) {
+    create_netcoding_node(id);
+    network_coding_node.prob_to_combine = COMBINATION_PERCENTAGE_RATE;
+}
+
+static inline void create_netcoding_normal_routing_node(int id) {
+    create_netcoding_node(id);
+    network_coding_node.prob_to_combine = 0;
+}
+
 /* ------------------- IMPLEMENTATION --------------------------------------- */
-static int should_combine_packet() {
-    return rand() % 100 < COMBINATION_PERCENTAGE_RATE;
+static int should_combine_packet(netcoding_node* node) {
+    return rand() % 100 < node->prob_to_combine;
 }
 
 static int get_packet_to_combine(netcoding_node* node,
@@ -228,7 +238,7 @@ static netcoding_packet combine_packets(netcoding_packet* pck1,
 static netcoding_packet route_packet(netcoding_node* node,
                                      netcoding_packet* packet) {
     netcoding_packet packet_to_combine;
-    if(should_combine_packet()
+    if(should_combine_packet(node)
        && get_packet_to_combine(node, packet, &packet_to_combine)) {
         return combine_packets(packet, &packet_to_combine);
     }

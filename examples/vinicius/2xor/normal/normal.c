@@ -20,7 +20,7 @@ static char buffer[PACKET_SIZE];
 static uip_ipaddr_t addr;
 
 /*---------------------------------------------------------------------------*/
-PROCESS(udp_process, "UDP 2xor network coding router");
+PROCESS(udp_process, "UDP 2xor network coding normal");
 AUTOSTART_PROCESSES(&udp_process);
 /*---------------------------------------------------------------------------*/
 static void receiver(struct simple_udp_connection *c,
@@ -30,7 +30,7 @@ static void receiver(struct simple_udp_connection *c,
                      uint16_t receiver_port,
                      const uint8_t *data,
                      uint16_t datalen) {
-    LOG_INFO("[Router]: Received response '%.*s' from ", datalen, (char *)data);
+    LOG_INFO("[Normal]: Received response '%.*s' from ", datalen, (char *)data);
     LOG_INFO_6ADDR(sender_addr);
     LOG_INFO_("\n");
 }
@@ -38,7 +38,7 @@ static void receiver(struct simple_udp_connection *c,
 PROCESS_THREAD(udp_process, ev, data) {
     uip_ipaddr_t dest_addr;
 
-    create_netcoding_combinatory_routing_node(node_id);
+    create_netcoding_normal_routing_node(node_id);
 
     PROCESS_BEGIN();
 

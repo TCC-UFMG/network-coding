@@ -379,6 +379,69 @@ int rpl_ext_header_hbh_update(uint8_t *ext_buf, int opt_offset) {
   return rpl_process_hbh(sender, sender_rank, loop_detected,
                          rank_error_signaled);
 }
+/*----------------------------------------------------------------------------*/
+/**
+ * @brief Function that receives a certain packet and call the network coding
+ * code in order to combine packets.
+ *
+ * @param data The pointer to the packet first byte in the UDP buffer.
+ */
+void MAC_route_packet(char *data) {
+  static netcoding_packet packet;
+  memcpy(&packet, data, PACKET_SIZE);
+
+  print_packet(&packet);
+  printf("\n");
+
+  netcoding_packet packet_to_route;
+  packet_to_route = route_packet(&network_coding_node, &packet);
+
+  memcpy(data, &packet_to_route, PACKET_SIZE);
+}
+/*----------------------------------------------------------------------------*/
+/**
+ * @brief Function that deals with network coding in the NETWORK layer.
+ *
+ */
+void MAC_network_coding_intervention() {
+  struct uip_routing_hdr *rh_header =
+      (struct uip_routing_hdr *)uipbuf_search_header(uip_buf, uip_len,
+                                                     UIP_PROTO_ROUTING);
+  uint8_t ext_len;
+  int has_preamble, offset;
+
+  // If the header has a variable size
+  if (!(rh_header == NULL || rh_header->routing_type != RPL_RH_TYPE_SRH)) {
+    ext_len = rh_header->len * 8 + 8;
+
+    // If it's a valid network coding packet
+    has_preamble = HAS_PREAMBLE((char *)&uip_buf[UIP_IPUDPH_LEN + ext_len]);
+
+    netcoding_log_format("VAR   ", network_coding_node.id, has_preamble,
+                         &UIP_IP_BUF->srcipaddr);
+
+    offset = 8 + ext_len;
+  }
+  // Fixed size header
+  else {
+    // If it's a valid network coding packet
+    int has_preamble = HAS_PREAMBLE((char *)&uip_buf[UIP_IPUDPH_LEN + 8]);
+
+    netcoding_log_format("CONST ", network_coding_node.id, has_preamble,
+                         &UIP_IP_BUF->srcipaddr);
+
+    offset = 16;
+  }
+
+  for (int i = 0; i < PACKET_SIZE; i++)
+    printf("%c", (char)*UIP_IP_PAYLOAD(offset + i));
+  printf("\n");
+
+  // If it's a valid network coding packet
+  if (has_preamble) {
+    MAC_route_packet(UIP_IP_PAYLOAD(offset));
+  }
+}
 /*---------------------------------------------------------------------------*/
 /* In-place update of the RPL HBH extension header, when already present
  * in the uIP packet. Used by insert_hbh_header and rpl_ext_header_update.
@@ -388,49 +451,7 @@ static int update_hbh_header(void) {
   struct uip_ext_hdr_opt_rpl *rpl_opt =
       (struct uip_ext_hdr_opt_rpl *)(UIP_IP_PAYLOAD(2));
 
-  /*==========================================================================*/
-  struct uip_routing_hdr *rh_header;
-  uint8_t ext_len;
-
-  rh_header = (struct uip_routing_hdr *)uipbuf_search_header(uip_buf, uip_len,
-                                                             UIP_PROTO_ROUTING);
-  // If the header has a variable size
-  if (!(rh_header == NULL || rh_header->routing_type != RPL_RH_TYPE_SRH)) {
-    ext_len = rh_header->len * 8 + 8;
-
-    // If it's a valid network coding packet
-    int has_preamble = HAS_PREAMBLE((char *)&uip_buf[UIP_IPUDPH_LEN + ext_len]);
-    if (has_preamble) {
-      uip_buf[UIP_IPUDPH_LEN + ext_len + PREAMBLE_SIZE + 7] += 1;
-    }
-
-    netcoding_log_format("VAR   ", network_coding_node.id, has_preamble,
-                         &UIP_IP_BUF->srcipaddr);
-
-    for (int i = 0; i < PREAMBLE_SIZE + 8; i++) {
-      char c = *UIP_IP_PAYLOAD(8 + ext_len + i);
-      printf("%c", c);
-    }
-    printf("\n");
-  }
-  // Fixed size header
-  else {
-    // If it's a valid network coding packet
-    int has_preamble = HAS_PREAMBLE((char *)&uip_buf[UIP_IPUDPH_LEN + 8]);
-    if (has_preamble) {
-      uip_buf[UIP_IPUDPH_LEN + 8 + PREAMBLE_SIZE + 7] += 1;
-    }
-
-    netcoding_log_format("CONST ", network_coding_node.id, has_preamble,
-                         &UIP_IP_BUF->srcipaddr);
-
-    for (int i = 0; i < PREAMBLE_SIZE + 8; i++) {
-      char c = *UIP_IP_PAYLOAD(16 + i);
-      printf("%c", c);
-    }
-    printf("\n");
-  }
-  /*==========================================================================*/
+  MAC_network_coding_intervention();
 
   if (UIP_IP_BUF->proto == UIP_PROTO_HBHO &&
       rpl_opt->opt_type == UIP_EXT_HDR_OPT_RPL) {

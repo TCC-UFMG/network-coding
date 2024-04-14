@@ -1,0 +1,1 @@
+Assuming there are X receiver nodes that have IDs between 1 and X.
