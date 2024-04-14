@@ -214,6 +214,7 @@ void uip_log(char *msg);
  *
  * \hideinitializer
  */
+#define UIP_CONF_UDP_CHECKSUMS 0
 #ifdef UIP_CONF_UDP_CHECKSUMS
 #define UIP_UDP_CHECKSUMS (UIP_CONF_UDP_CHECKSUMS)
 #else

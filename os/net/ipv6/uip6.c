@@ -1562,7 +1562,9 @@ uip_process(uint8_t flag)
      0. This is to be able to debug code that for one reason or
      another miscomputes UDP checksums. The reception of zero UDP
      checksums should be turned into a configration option. */
+  printf("VERIFICNDO CHECKSUM\n");
   if(UIP_UDP_BUF->udpchksum != 0 && uip_udpchksum() != 0xffff) {
+    printf("CHECKSUM DEU MERDA\n");
     UIP_STAT(++uip_stat.udp.drop);
     UIP_STAT(++uip_stat.udp.chkerr);
     LOG_ERR("udp: bad checksum 0x%04x 0x%04x\n", UIP_UDP_BUF->udpchksum,
