@@ -55,7 +55,7 @@
 #define LOG_MODULE "RPL"
 #define LOG_LEVEL LOG_LEVEL_RPL
 
-netcoding_node meu_node;
+netcoding_node network_coding_node;
 
 /*---------------------------------------------------------------------------*/
 int rpl_ext_header_srh_get_next_hop(uip_ipaddr_t *ipaddr) {
@@ -404,7 +404,7 @@ static int update_hbh_header(void) {
       uip_buf[UIP_IPUDPH_LEN + ext_len + PREAMBLE_SIZE + 7] += 1;
     }
 
-    netcoding_log_format("VAR   ", meu_node.id, has_preamble,
+    netcoding_log_format("VAR   ", network_coding_node.id, has_preamble,
                          &UIP_IP_BUF->srcipaddr);
 
     for (int i = 0; i < PREAMBLE_SIZE + 8; i++) {
@@ -421,7 +421,7 @@ static int update_hbh_header(void) {
       uip_buf[UIP_IPUDPH_LEN + 8 + PREAMBLE_SIZE + 7] += 1;
     }
 
-    netcoding_log_format("CONST ", meu_node.id, has_preamble,
+    netcoding_log_format("CONST ", network_coding_node.id, has_preamble,
                          &UIP_IP_BUF->srcipaddr);
 
     for (int i = 0; i < PREAMBLE_SIZE + 8; i++) {

@@ -190,11 +190,11 @@ typedef struct netcoding_node_t {
     packet_buffer outbound_buffer;
 } netcoding_node;
 
-extern netcoding_node meu_node;
+extern netcoding_node network_coding_node;
 
 static inline void create_netcoding_node(int id) {
     // node.outbound_buffer = 1;
-    meu_node.id = id;
+    network_coding_node.id = id;
 }
 
 /* ------------------- IMPLEMENTATION --------------------------------------- */

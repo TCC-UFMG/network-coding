@@ -46,7 +46,6 @@ PROCESS_THREAD(udp_client_process, ev, data) {
     static char str[32];
     uip_ipaddr_t dest_ipaddr;
     static uint32_t tx_count;
-    static uint32_t missed_tx_count;
 
     create_netcoding_node(node_id);
 
@@ -67,6 +66,9 @@ PROCESS_THREAD(udp_client_process, ev, data) {
         if(node_id == 5) {
             if(NETSTACK_ROUTING.node_is_reachable()
                && NETSTACK_ROUTING.get_root_ipaddr(&dest_ipaddr)) {
+                uip_ip6addr(
+                    &dest_ipaddr, 0xfd00, 0, 0, 0, 0X201, 0X1, 0X1, 0X1);
+
                 /* Send to DAG root */
                 tx_count = 0;
                 LOG_INFO("Sending request %" PRIu32 " to ", tx_count);
@@ -79,12 +81,6 @@ PROCESS_THREAD(udp_client_process, ev, data) {
                          tx_count);
 
                 simple_udp_sendto(&udp_conn, str, strlen(str), &dest_ipaddr);
-            }
-            else {
-                LOG_INFO("Not reachable yet\n");
-                if(tx_count > 0) {
-                    missed_tx_count++;
-                }
             }
         }
 
