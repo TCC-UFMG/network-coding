@@ -1,0 +1,25 @@
+---
+Language: Cpp
+BasedOnStyle:  Google
+IndentWidth: 4
+ColumnLimit: 80
+DerivePointerAlignment: true
+SpaceBeforeParens: Never
+AllowShortCaseLabelsOnASingleLine: true
+BinPackArguments: false
+BinPackParameters: false
+BreakBeforeBinaryOperators: NonAssignment
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: false
+  AfterControlStatement: false
+  AfterEnum: false
+  AfterFunction: false
+  AfterStruct: false
+  AfterUnion: false
+  BeforeCatch: true
+  BeforeElse: true
+
+BreakBeforeBraces: Custom
+AllowShortIfStatementsOnASingleLine: Always
+IncludeBlocks : Merge

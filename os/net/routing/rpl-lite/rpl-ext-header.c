@@ -43,10 +43,12 @@
  *         Simon Duquennoy <simon.duquennoy@inria.fr>
  */
 
+#include "examples/vinicius/netcoding/netcoding.h"
 #include "net/ipv6/uip-sr.h"
 #include "net/packetbuf.h"
 #include "net/routing/routing.h"
 #include "net/routing/rpl-lite/rpl.h"
+#include "sys/node-id.h"
 
 /* Log configuration */
 #include "sys/log.h"
@@ -120,7 +122,7 @@ int rpl_ext_header_srh_update(void) {
   LOG_INFO("read SRH, path len %u, segments left %u, Cmpri %u, Cmpre %u, ext "
            "len %u (padding %u)\n",
            path_len, segments_left, cmpri, cmpre, ext_len, padding);
-
+  // Here
   /* Update SRH in-place */
   if (segments_left == 0) {
     /* We are the final destination, do nothing */
@@ -383,6 +385,49 @@ static int update_hbh_header(void) {
   struct uip_hbho_hdr *hbh_hdr = (struct uip_hbho_hdr *)UIP_IP_PAYLOAD(0);
   struct uip_ext_hdr_opt_rpl *rpl_opt =
       (struct uip_ext_hdr_opt_rpl *)(UIP_IP_PAYLOAD(2));
+
+  struct uip_routing_hdr *rh_header;
+  uint8_t ext_len;
+  // struct uip_rpl_srh_hdr *srh_header;
+  // uint8_t cmpri, cmpre;
+  // uint8_t padding;
+  // uint8_t path_len;
+  // uint8_t segments_left;
+
+  rh_header = (struct uip_routing_hdr *)uipbuf_search_header(uip_buf, uip_len,
+                                                             UIP_PROTO_ROUTING);
+  if (!(rh_header == NULL || rh_header->routing_type != RPL_RH_TYPE_SRH)) {
+    ext_len = rh_header->len * 8 + 8;
+
+    printf("VAR|");
+    int is_preamble = IS_PREAMBLE((char *)&uip_buf[UIP_IPUDPH_LEN + ext_len]);
+    if (is_preamble)
+      uip_buf[UIP_IPUDPH_LEN + ext_len + PREAMBLE_SIZE + 7] += 1;
+    for (int i = 0; i < PREAMBLE_SIZE + 8; i++) {
+      char c = *UIP_IP_PAYLOAD(8 + ext_len + i);
+      printf("%c", c);
+    }
+    printf("|");
+    log_6addr(&UIP_IP_BUF->srcipaddr);
+    printf("\n");
+  } else {
+    printf("CONST|");
+    int is_preamble = IS_PREAMBLE((char *)&uip_buf[UIP_IPUDPH_LEN + 8]);
+    if (is_preamble) {
+      uip_buf[UIP_IPUDPH_LEN + 8 + PREAMBLE_SIZE + 7] += 1;
+    }
+
+    printf("%d|", is_preamble);
+    for (int i = 0; i < PREAMBLE_SIZE + 8; i++) {
+      char c = *UIP_IP_PAYLOAD(16 + i);
+      printf("%c", c);
+    }
+    if (is_preamble) {
+      printf("|");
+      log_6addr(&UIP_IP_BUF->srcipaddr);
+    }
+    printf("\n");
+  }
 
   if (UIP_IP_BUF->proto == UIP_PROTO_HBHO &&
       rpl_opt->opt_type == UIP_EXT_HDR_OPT_RPL) {
