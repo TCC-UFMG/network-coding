@@ -48,6 +48,8 @@ PROCESS_THREAD(udp_client_process, ev, data) {
     static uint32_t tx_count;
     static uint32_t missed_tx_count;
 
+    create_netcoding_node(node_id);
+
     uip_ipaddr_t addr;
     uip_ip6addr(
         &addr, 0XFE80, 0, 0, 0, 512 + node_id, node_id, node_id, node_id);

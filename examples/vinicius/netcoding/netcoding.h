@@ -12,7 +12,7 @@
 #define EMPTY_PACKET_ID UINT32_MAX
 #define PACKET_PREAMBLE "preambulo"
 #define PREAMBLE_SIZE (sizeof(PACKET_PREAMBLE) - 1)
-#define IS_PREAMBLE(str) (strncmp(str, PACKET_PREAMBLE, PREAMBLE_SIZE) == 0)
+#define HAS_PREAMBLE(str) (strncmp(str, PACKET_PREAMBLE, PREAMBLE_SIZE) == 0)
 
 typedef struct netcoding_packet_header_t {
     uint32_t holding_packets[NUM_COMBINATIONS];
@@ -186,15 +186,16 @@ static int push_packet(packet_buffer* buffer, netcoding_packet* packet) {
 #define COMBINATION_PERCENTAGE_RATE 30
 
 typedef struct netcoding_node_t {
-    // packet_buffer outbound_buffer;
+    int id;
     packet_buffer outbound_buffer;
 } netcoding_node;
 
-// static netcoding_node create_node() {
-//     netcoding_node node;
-//     node.outbound_buffer = 1;
-//     return node;
-// }
+extern netcoding_node meu_node;
+
+static inline void create_netcoding_node(int id) {
+    // node.outbound_buffer = 1;
+    meu_node.id = id;
+}
 
 /* ------------------- IMPLEMENTATION --------------------------------------- */
 static int should_combine_packet() {
