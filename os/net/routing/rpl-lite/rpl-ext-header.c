@@ -57,6 +57,10 @@
 
 netcoding_node network_coding_node;
 
+void drop_packet() {
+  uipbuf_clear();
+  uip_flags = 0;
+}
 /*----------------------------------------------------------------------------*/
 /**
  * @brief Function that receives a certain packet and call the network coding
@@ -78,6 +82,7 @@ void MAC_route_packet(char *data) {
 
   // Interrupts the routing process
   if (packet_to_route == NULL) {
+    drop_packet();
   } else {
     memcpy(data, packet_to_route, PACKET_SIZE);
     free(packet_to_route);
@@ -110,13 +115,6 @@ void MAC_network_coding_intervention() {
     header_type = "CONST ";
     offset = 16;
   }
-
-  // netcoding_log_format(header_type, network_coding_node.id, has_preamble,
-  //                      &UIP_IP_BUF->srcipaddr);
-
-  // for (int i = 0; i < PACKET_SIZE; i++)
-  //   printf("%c", (char)*UIP_IP_PAYLOAD(offset + i));
-  // printf("\n");
 
   // If it's a valid network coding packet
   if (has_preamble) {

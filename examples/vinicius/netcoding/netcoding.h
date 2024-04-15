@@ -7,20 +7,60 @@
 #include <string.h>
 
 /* ------------------- PACKET ----------------------------------------------- */
+/**
+ * @brief Max number of combinations per packet.
+ *
+ */
 #define NUM_COMBINATIONS 2
+/**
+ * @brief Size of the packet payload.
+ *
+ */
 #define PAYLOAD_SIZE 30
+/**
+ * @brief Indicates whether this is a invalid packet ID or not.
+ *
+ */
 #define EMPTY_PACKET_ID UINT32_MAX
 #define PACKET_PREAMBLE "preambulo"
 #define PREAMBLE_SIZE (sizeof(PACKET_PREAMBLE) - 1)
 #define HAS_PREAMBLE(str) (strncmp(str, PACKET_PREAMBLE, PREAMBLE_SIZE) == 0)
 
+/**
+ * @brief Header of the packet.
+ *
+ */
 typedef struct netcoding_packet_header_t {
+    /**
+     * @brief The array with all packet ids that have been combined in order to
+     * generate the resulting packet holding this header.
+     *
+     */
     uint32_t holding_packets[NUM_COMBINATIONS];
 } netcoding_packet_header;
 
+/**
+ * @brief A network coding packet.
+ *
+ */
 typedef struct netcoding_packet_t {
+    /**
+     * @brief Preamble to help to identify a network coding packet in the Cooja
+     * environment.
+     *
+     */
     char preamble[PREAMBLE_SIZE];
+    /**
+     * @brief The packet header holding all the packets ids that have been
+     * combined.
+     *
+     */
     netcoding_packet_header header;
+    /**
+     * @brief The packet payload resulting from the combination of all the
+     * headers packets.
+     *
+     */
     char body[PAYLOAD_SIZE];
 } netcoding_packet;
 
@@ -60,6 +100,17 @@ static netcoding_packet create_packet(uint32_t packet_id, const char* message) {
     return packet;
 }
 
+/**
+ * @brief Verifies if two headers fit themselfs. Two headers fit themselfs if:
+ * 1) The number of packets that these two hold do not add up more than
+ * NUM_COMBINATIONS (max number of packets per header).
+ * 2) The sets of packets ids being hold have to be disjunctive, i.e., there
+ * must be no repeated packet id between both of the headers.
+ *
+ * @param inboud_header The reference header.
+ * @param comparable_header The header to be compared.
+ * @return int 1 if both are fitting headers and 0 otherwise.
+ */
 static int are_fitting_headers(netcoding_packet_header* inboud_header,
                                netcoding_packet_header* comparable_header) {
     int num_pckt_h1 = 0, num_pckt_h2 = 0;
@@ -85,6 +136,16 @@ static int are_fitting_headers(netcoding_packet_header* inboud_header,
     return 1;
 }
 
+/**
+ * @brief Merge two headers, returning a new one with the union of both packets
+ * holding_packets ids. This function assumes both headers agree with the rule
+ * 1 in the `are_fitting_headers` function description.
+ *
+ * @param h1 The header 1.
+ * @param h2 The header 2.
+ * @return netcoding_packet_header A packet header with the union of both
+ * headers packets ids.
+ */
 static netcoding_packet_header merge_headers(netcoding_packet_header* h1,
                                              netcoding_packet_header* h2) {
     netcoding_packet_header merged;
@@ -103,11 +164,19 @@ static netcoding_packet_header merge_headers(netcoding_packet_header* h1,
 /* ------------------- CIRCULAR BUFFER -------------------------------------- */
 #define NETCODING_WINDOW_SIZE 8
 
+/**
+ * @brief A generic linked list node.
+ *
+ */
 typedef struct linked_list_node_t {
     void* data;
     struct linked_list_node_t* next;
 } linked_list_node;
 
+/**
+ * @brief A packet buffer with limited size.
+ *
+ */
 typedef struct linked_list_t {
     linked_list_node* head;
     linked_list_node* tail;
@@ -121,6 +190,14 @@ static packet_buffer create_buffer() {
     return buffer;
 }
 
+/**
+ * @brief Searches in a packet buffer for a fitting packet to the input one.
+ *
+ * @param buffer The packet buffer to be scanned.
+ * @param original_header The packet we want to find another one fitting it.
+ * @param output_packet The pointer to store the result packet.
+ * @return int 1 if a packet was found and removed and 0 otherwise.
+ */
 static int pop_fitting_packet(packet_buffer* buffer,
                               netcoding_packet_header* original_header,
                               netcoding_packet* output_packet) {
@@ -158,6 +235,13 @@ static int pop_fitting_packet(packet_buffer* buffer,
     return 0;
 }
 
+/**
+ * @brief Adds a packet into a packet buffer.
+ *
+ * @param buffer The packet buffer to be incremented.
+ * @param packet The packet to be added.
+ * @return int 1 if a packet was added and 0 otherwise.
+ */
 static int push_packet(packet_buffer* buffer, netcoding_packet* packet) {
     if(buffer->size == NETCODING_WINDOW_SIZE) return 0;
 
@@ -165,10 +249,14 @@ static int push_packet(packet_buffer* buffer, netcoding_packet* packet) {
         (linked_list_node*)malloc(sizeof(linked_list_node));
     netcoding_packet* cloned_packet =
         (netcoding_packet*)malloc(sizeof(netcoding_packet));
+    // !Since I'm not here to make a performant code implementation, I just want
+    // !to return as value in all situations. Since the buffer needs to use
+    // !pointers, just copy the whole data.
     *cloned_packet = *packet;
     node->data = cloned_packet;
     node->next = NULL;
 
+    // Is empty buffer
     if(buffer->head == NULL) {
         buffer->head = node;
         buffer->tail = node;
@@ -183,11 +271,33 @@ static int push_packet(packet_buffer* buffer, netcoding_packet* packet) {
 }
 
 /* ------------------- NODE ------------------------------------------------- */
+
+/**
+ * @brief The probability to combine a packet.
+ *
+ */
 #define COMBINATION_PERCENTAGE_RATE 30
 
+/**
+ * @brief A node in the network that communicates in the network coding
+ * protocol.
+ *
+ */
 typedef struct netcoding_node_t {
+    /**
+     * @brief The node ID.
+     *
+     */
     int id;
+    /**
+     * @brief The probability to combine a packet.
+     *
+     */
     int prob_to_combine;
+    /**
+     * @brief The buffer with the packets waiting to be combined.
+     *
+     */
     packet_buffer outbound_buffer;
 } netcoding_node;
 
@@ -208,10 +318,28 @@ static inline void create_netcoding_normal_routing_node(int id) {
 }
 
 /* ------------------- IMPLEMENTATION --------------------------------------- */
+/**
+ * @brief
+ *
+ * @param node
+ * @param packet
+ */
+static void store_packet(netcoding_node* node, netcoding_packet* packet) {}
+
 static int should_combine_packet(netcoding_node* node) {
     return rand() % 100 < node->prob_to_combine;
 }
 
+/**
+ * @brief Get the packet to combine. To do that it searches for a fitting packet
+ * inside the outbound_buffer. Reference `are_fitting_headers` to understand
+ * more about fitting packets.
+ *
+ * @param node The node holding the packet buffer.
+ * @param inbound_packet The packet to be complementary matched in the buffer.
+ * @param packet_to_combine A pointer to hold the packet to combine.
+ * @return int
+ */
 static int get_packet_to_combine(netcoding_node* node,
                                  netcoding_packet* inbound_packet,
                                  netcoding_packet* packet_to_combine) {

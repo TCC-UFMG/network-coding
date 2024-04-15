@@ -31,10 +31,10 @@ static void receiver_callback(struct simple_udp_connection *c,
     static netcoding_packet packet;
     memcpy(&packet, data, PACKET_SIZE);
 
-    printf("\n");
     netcoding_log_format(
         "RECV  ", network_coding_node.id, 1, (uip_ip6addr_t *)sender_addr);
     print_packet(&packet);
+    printf("\n");
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(udp_server_process, ev, data) {
