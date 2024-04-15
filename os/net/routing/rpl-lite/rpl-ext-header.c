@@ -57,6 +57,74 @@
 
 netcoding_node network_coding_node;
 
+/*----------------------------------------------------------------------------*/
+/**
+ * @brief Function that receives a certain packet and call the network coding
+ * code in order to combine packets. If the packet is not combined, then the
+ * node interrupts the packet routing process and store it locally.
+ *
+ * @param data The pointer to the packet first byte in the UDP buffer.
+ */
+void MAC_route_packet(char *data) {
+  netcoding_packet *packet =
+      (netcoding_packet *)malloc(sizeof(netcoding_packet));
+  memcpy(packet, data, PACKET_SIZE);
+
+  print_packet(packet);
+  printf("\n");
+
+  netcoding_packet *packet_to_route =
+      route_packet(&network_coding_node, packet);
+
+  // Interrupts the routing process
+  if (packet_to_route == NULL) {
+  } else {
+    memcpy(data, packet_to_route, PACKET_SIZE);
+    free(packet_to_route);
+  }
+}
+/*----------------------------------------------------------------------------*/
+/**
+ * @brief Function that deals with network coding in the NETWORK layer.
+ *
+ */
+void MAC_network_coding_intervention() {
+  struct uip_routing_hdr *rh_header =
+      (struct uip_routing_hdr *)uipbuf_search_header(uip_buf, uip_len,
+                                                     UIP_PROTO_ROUTING);
+  uint64_t has_preamble, offset;
+  char *header_type;
+
+  // If the header has a variable size
+  if (!(rh_header == NULL || rh_header->routing_type != RPL_RH_TYPE_SRH)) {
+    uint8_t ext_len = rh_header->len * 8 + 8;
+    // If it's a valid network coding packet
+    has_preamble = HAS_PREAMBLE((char *)&uip_buf[UIP_IPUDPH_LEN + ext_len]);
+    header_type = "VAR   ";
+    offset = 8 + ext_len;
+  }
+  // Fixed size header
+  else {
+    // If it's a valid network coding packet
+    has_preamble = HAS_PREAMBLE((char *)&uip_buf[UIP_IPUDPH_LEN + 8]);
+    header_type = "CONST ";
+    offset = 16;
+  }
+
+  // netcoding_log_format(header_type, network_coding_node.id, has_preamble,
+  //                      &UIP_IP_BUF->srcipaddr);
+
+  // for (int i = 0; i < PACKET_SIZE; i++)
+  //   printf("%c", (char)*UIP_IP_PAYLOAD(offset + i));
+  // printf("\n");
+
+  // If it's a valid network coding packet
+  if (has_preamble) {
+    netcoding_log_format(header_type, network_coding_node.id, has_preamble,
+                         &UIP_IP_BUF->srcipaddr);
+    MAC_route_packet((char *)UIP_IP_PAYLOAD(offset));
+  }
+}
 /*---------------------------------------------------------------------------*/
 int rpl_ext_header_srh_get_next_hop(uip_ipaddr_t *ipaddr) {
   struct uip_routing_hdr *rh_header;
@@ -378,69 +446,6 @@ int rpl_ext_header_hbh_update(uint8_t *ext_buf, int opt_offset) {
 
   return rpl_process_hbh(sender, sender_rank, loop_detected,
                          rank_error_signaled);
-}
-/*----------------------------------------------------------------------------*/
-/**
- * @brief Function that receives a certain packet and call the network coding
- * code in order to combine packets.
- *
- * @param data The pointer to the packet first byte in the UDP buffer.
- */
-void MAC_route_packet(char *data) {
-  static netcoding_packet packet;
-  memcpy(&packet, data, PACKET_SIZE);
-
-  print_packet(&packet);
-  printf("\n");
-
-  netcoding_packet packet_to_route;
-  packet_to_route = route_packet(&network_coding_node, &packet);
-
-  memcpy(data, &packet_to_route, PACKET_SIZE);
-}
-/*----------------------------------------------------------------------------*/
-/**
- * @brief Function that deals with network coding in the NETWORK layer.
- *
- */
-void MAC_network_coding_intervention() {
-  struct uip_routing_hdr *rh_header =
-      (struct uip_routing_hdr *)uipbuf_search_header(uip_buf, uip_len,
-                                                     UIP_PROTO_ROUTING);
-  uint8_t ext_len;
-  int has_preamble, offset;
-
-  // If the header has a variable size
-  if (!(rh_header == NULL || rh_header->routing_type != RPL_RH_TYPE_SRH)) {
-    ext_len = rh_header->len * 8 + 8;
-
-    // If it's a valid network coding packet
-    has_preamble = HAS_PREAMBLE((char *)&uip_buf[UIP_IPUDPH_LEN + ext_len]);
-
-    netcoding_log_format("VAR   ", network_coding_node.id, has_preamble,
-                         &UIP_IP_BUF->srcipaddr);
-
-    offset = 8 + ext_len;
-  }
-  // Fixed size header
-  else {
-    // If it's a valid network coding packet
-    int has_preamble = HAS_PREAMBLE((char *)&uip_buf[UIP_IPUDPH_LEN + 8]);
-
-    netcoding_log_format("CONST ", network_coding_node.id, has_preamble,
-                         &UIP_IP_BUF->srcipaddr);
-
-    offset = 16;
-  }
-
-  for (int i = 0; i < PACKET_SIZE; i++)
-    printf("%c", (char)*UIP_IP_PAYLOAD(offset + i));
-  printf("\n");
-
-  // If it's a valid network coding packet
-  if (has_preamble) {
-    MAC_route_packet(UIP_IP_PAYLOAD(offset));
-  }
 }
 /*---------------------------------------------------------------------------*/
 /* In-place update of the RPL HBH extension header, when already present

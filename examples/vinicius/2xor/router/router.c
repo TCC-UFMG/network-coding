@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "../netcoding/netcoding.h"
+#include "../../netcoding/netcoding.h"
 #include "contiki-lib.h"
 #include "contiki-net.h"
 #include "contiki.h"
@@ -46,7 +46,7 @@ PROCESS_THREAD(udp_process, ev, data) {
         &udp_connection, UDP_ROUTER_PORT, NULL, UDP_RECEIVER_PORT, receiver);
 
     printf("PACKET SIZE = %d in router %d with ip ", (int)PACKET_SIZE, node_id);
-    log_6addr_compact(&uip_ds6_get_link_local(-1)->ipaddr);
+    log_6addr(&uip_ds6_get_link_local(-1)->ipaddr);
     printf("\n");
 
     PROCESS_END();

@@ -1,5 +1,6 @@
 #include <stdio.h>
-#include "../netcoding/netcoding.h"
+#include "../../netcoding/netcoding.h"
+#include "../../netcoding/utils.h"
 #include "contiki-lib.h"
 #include "contiki-net.h"
 #include "contiki.h"
@@ -23,16 +24,19 @@ static uip_ipaddr_t addr;
 PROCESS(udp_process, "UDP 2xor network coding normal");
 AUTOSTART_PROCESSES(&udp_process);
 /*---------------------------------------------------------------------------*/
-static void receiver(struct simple_udp_connection *c,
-                     const uip_ipaddr_t *sender_addr,
-                     uint16_t sender_port,
-                     const uip_ipaddr_t *receiver_addr,
-                     uint16_t receiver_port,
-                     const uint8_t *data,
-                     uint16_t datalen) {
-    LOG_INFO("[Normal]: Received response '%.*s' from ", datalen, (char *)data);
-    LOG_INFO_6ADDR(sender_addr);
-    LOG_INFO_("\n");
+static void receiver_callback(struct simple_udp_connection *c,
+                              const uip_ipaddr_t *sender_addr,
+                              uint16_t sender_port,
+                              const uip_ipaddr_t *receiver_addr,
+                              uint16_t receiver_port,
+                              const uint8_t *data,
+                              uint16_t datalen) {
+    static netcoding_packet packet;
+    memcpy(&packet, data, PACKET_SIZE);
+
+    netcoding_log_format(
+        "NORMAL", network_coding_node.id, 1, (uip_ip6addr_t *)sender_addr);
+    print_packet(&packet);
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(udp_process, ev, data) {
@@ -42,11 +46,14 @@ PROCESS_THREAD(udp_process, ev, data) {
 
     PROCESS_BEGIN();
 
-    simple_udp_register(
-        &udp_connection, UDP_ROUTER_PORT, NULL, UDP_RECEIVER_PORT, receiver);
+    simple_udp_register(&udp_connection,
+                        UDP_ROUTER_PORT,
+                        NULL,
+                        UDP_RECEIVER_PORT,
+                        receiver_callback);
 
     printf("PACKET SIZE = %d in router %d with ip ", (int)PACKET_SIZE, node_id);
-    log_6addr_compact(&uip_ds6_get_link_local(-1)->ipaddr);
+    log_6addr(&uip_ds6_get_link_local(-1)->ipaddr);
     printf("\n");
 
     PROCESS_END();

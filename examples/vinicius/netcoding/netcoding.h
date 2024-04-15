@@ -225,25 +225,48 @@ static void xor_combine(char data1[PAYLOAD_SIZE],
     for(int i = 0; i < PAYLOAD_SIZE; i++) combined[i] = data1[i] ^ data2[i];
 }
 
-static netcoding_packet combine_packets(netcoding_packet* pck1,
-                                        netcoding_packet* pck2) {
-    netcoding_packet combined_packet;
+/**
+ * @brief Combine two packets
+ *
+ * @param pck1 Packet of reference.
+ * @param pck2 Packet to be merged.
+ * @return netcoding_packet* The new combined packet.
+ */
+static netcoding_packet* combine_packets(netcoding_packet* pck1,
+                                         netcoding_packet* pck2) {
+    netcoding_packet* combined_packet =
+        (netcoding_packet*)malloc(sizeof(netcoding_packet));
 
-    combined_packet.header = merge_headers(&pck1->header, &pck2->header);
-    xor_combine(pck1->body, pck2->body, combined_packet.body);
+    combined_packet->header = merge_headers(&pck1->header, &pck2->header);
+    xor_combine(pck1->body, pck2->body, combined_packet->body);
 
     return combined_packet;
 }
 
-static netcoding_packet route_packet(netcoding_node* node,
-                                     netcoding_packet* packet) {
-    netcoding_packet packet_to_combine;
-    if(should_combine_packet(node)
-       && get_packet_to_combine(node, packet, &packet_to_combine)) {
-        return combine_packets(packet, &packet_to_combine);
+/**
+ * @brief Function that routes a packet according to network coding rules:
+ * 1) With a probability P, the packet should be combined. With 1-P the packet
+ * should be sent with no modifications.
+ * 2) If P happens, the node will try to combine the received packet with any
+ * previous stored packet. If there is no valid packet to combine, then store
+ * the packet.
+ *
+ * @param node The node to route the packet.
+ * @param packet The packet to be routed.
+ * @return netcoding_packet
+ */
+static netcoding_packet* route_packet(netcoding_node* node,
+                                      netcoding_packet* packet) {
+    if(should_combine_packet(node)) {
+        netcoding_packet packet_to_combine;
+        if(get_packet_to_combine(node, packet, &packet_to_combine)) {
+            return combine_packets(packet, &packet_to_combine);
+        }
+
+        // TODO: store_packet(node, packet);
+        return NULL;
     }
-    else
-        return *packet;
+    return packet;
 }
 
 #endif /* NET_CODING_H_ */

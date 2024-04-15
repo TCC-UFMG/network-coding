@@ -10,7 +10,7 @@
 #define UDP_RECEIVER_PORT 3100
 #define UDP_SENDER_PORT 3200
 
-#define SEND_INTERVAL (4 * CLOCK_SECOND)
+#define SEND_INTERVAL (7 * CLOCK_SECOND)
 
 #define LOG_MODULE "Coding"
 #define LOG_LEVEL LOG_LEVEL_INFO
@@ -53,15 +53,24 @@ PROCESS_THREAD(udp_process, ev, data) {
     etimer_set(&periodic_timer, SEND_INTERVAL);
 
     printf("PACKET SIZE = %d in node %d with ip ", (int)PACKET_SIZE, node_id);
-    log_6addr_compact(&uip_ds6_get_link_local(-1)->ipaddr);
+    log_6addr(&uip_ds6_get_link_local(-1)->ipaddr);
     printf("\n");
 
-    static int packet_id = 0;
+    static int packet_id;
+    packet_id = node_id;
     static netcoding_packet packet;
     char packet_message[PAYLOAD_SIZE];
     static char buffer[PACKET_SIZE];
 
     while(1) {
+        // Make sure no packet is going to have and invalid id
+        // packet_id++;
+        // packet_id %= EMPTY_PACKET_ID;
+
+        PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
+        etimer_reset(&periodic_timer);
+        /*====================================================================*/
+
         sprintf(packet_message, "Message %d from %d", packet_id, node_id);
         packet = create_packet(packet_id, packet_message);
         memcpy(buffer, &packet, sizeof(packet));
@@ -71,14 +80,6 @@ PROCESS_THREAD(udp_process, ev, data) {
         printf("\n");
 
         simple_udp_sendto(&udp_connection, buffer, PACKET_SIZE, &dest_ipaddr);
-
-        /*====================================================================*/
-        // Make sure no packet is going to have and invalid id
-        packet_id++;
-        packet_id %= EMPTY_PACKET_ID;
-
-        PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
-        etimer_reset(&periodic_timer);
     }
 
     PROCESS_END();
