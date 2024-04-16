@@ -5,6 +5,10 @@
 #include "contiki-net.h"
 #include "contiki.h"
 #include "log.h"
+#include "net/ipv6/uip-ds6-route.h"
+#include "net/ipv6/uip-sr.h"
+#include "net/mac/tsch/tsch.h"
+#include "net/routing/routing.h"
 #include "sys/node-id.h"
 
 #define UDP_ROUTER_PORT 3000
@@ -48,6 +52,7 @@ PROCESS_THREAD(udp_server_process, ev, data) {
 
     /* Initialize DAG root */
     NETSTACK_ROUTING.root_start();
+    NETSTACK_MAC.on();
 
     /* Initialize UDP connection */
     simple_udp_register(&udp_connection,

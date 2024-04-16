@@ -4,6 +4,10 @@
 #include "contiki-net.h"
 #include "contiki.h"
 #include "log.h"
+#include "net/ipv6/uip-ds6-route.h"
+#include "net/ipv6/uip-sr.h"
+#include "net/mac/tsch/tsch.h"
+#include "net/routing/routing.h"
 #include "sys/node-id.h"
 
 #define UDP_ROUTER_PORT 3000
@@ -44,6 +48,8 @@ PROCESS_THREAD(udp_process, ev, data) {
 
     PROCESS_BEGIN();
 
+    NETSTACK_MAC.on();
+
     simple_udp_register(&udp_connection,
                         UDP_SENDER_PORT,
                         NULL,
@@ -70,16 +76,18 @@ PROCESS_THREAD(udp_process, ev, data) {
         PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
         etimer_reset(&periodic_timer);
         /*====================================================================*/
+        if(NETSTACK_ROUTING.node_is_reachable()) {
+            sprintf(packet_message, "Message %d from %d", packet_id, node_id);
+            packet = create_packet(packet_id, packet_message);
+            memcpy(buffer, &packet, sizeof(packet));
 
-        sprintf(packet_message, "Message %d from %d", packet_id, node_id);
-        packet = create_packet(packet_id, packet_message);
-        memcpy(buffer, &packet, sizeof(packet));
+            printf("Sending message %d to ", packet_id);
+            log_6addr(&dest_ipaddr);
+            printf("\n");
 
-        printf("Sending message %d to ", packet_id);
-        log_6addr(&dest_ipaddr);
-        printf("\n");
-
-        simple_udp_sendto(&udp_connection, buffer, PACKET_SIZE, &dest_ipaddr);
+            simple_udp_sendto(
+                &udp_connection, buffer, PACKET_SIZE, &dest_ipaddr);
+        }
     }
 
     PROCESS_END();
