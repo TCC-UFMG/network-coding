@@ -33,6 +33,24 @@ static packet_buffer create_buffer() {
     return buffer;
 }
 
+static int find_packet(packet_buffer* buffer,
+                       netcoding_packet* original_packet,
+                       netcoding_packet* output_packet) {
+    linked_list_node* cur_node = buffer->head;
+
+    while(cur_node) {
+        netcoding_packet* packet = (netcoding_packet*)cur_node->data;
+
+        if(are_equivalent_headers(&packet->header, &original_packet->header)) {
+            output_packet = packet;
+            return 1;
+        }
+
+        cur_node = cur_node->next;
+    }
+    return 0;
+}
+
 /**
  * @brief Searches in a packet buffer for a fitting packet to the input one.
  *
@@ -87,6 +105,8 @@ static int pop_fitting_packet(packet_buffer* buffer,
  */
 static int push_packet(packet_buffer* buffer, netcoding_packet* packet) {
     if(buffer->size == NETCODING_WINDOW_SIZE) return 0;
+    netcoding_packet* _;
+    if(find_packet(buffer, packet, _)) return 1;
 
     linked_list_node* node =
         (linked_list_node*)malloc(sizeof(linked_list_node));

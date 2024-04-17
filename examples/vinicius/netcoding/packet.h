@@ -146,6 +146,22 @@ static int are_fitting_headers(netcoding_packet_header* inboud_header,
     return 1;
 }
 
+static int are_equivalent_headers(netcoding_packet_header* inboud_header,
+                                  netcoding_packet_header* comparable_header) {
+    for(int i = 0; i < NUM_COMBINATIONS; i++) {
+        int found = 0;
+        for(int j = 0; j < NUM_COMBINATIONS; j++) {
+            if(inboud_header->holding_packets[i]
+               == comparable_header->holding_packets[j]) {
+                found = 1;
+                break;
+            }
+        }
+        if(!found) return 0;
+    }
+    return 1;
+}
+
 /**
  * @brief Merge two headers, returning a new one with the union of both packets
  * holding_packets ids. This function assumes both headers agree with the rule
