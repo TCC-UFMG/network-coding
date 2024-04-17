@@ -7,17 +7,16 @@
 
 /* ------------------- IMPLEMENTATION --------------------------------------- */
 /**
- * @brief
+ * @brief Stores a packet inside a node. If the packet is raw, it goes to the
+ * raw_buffer and combination_buffer otherwise.
  *
  * @param node
  * @param packet
+ * @return int 1 if the packet was stored and 0 otherwise.
  */
-static void store_packet(netcoding_node* node, netcoding_packet* packet) {
-    if(is_raw_packet(packet)) {
-        push_packet(&node->raw_buffer, packet);
-        return;
-    }
-    push_packet(&node->combination_buffer, packet);
+static int store_packet(netcoding_node* node, netcoding_packet* packet) {
+    if(is_raw_packet(packet)) return push_packet(&node->raw_buffer, packet);
+    return push_packet(&node->combination_buffer, packet);
 }
 
 static int should_combine_packet(netcoding_node* node) {
@@ -51,7 +50,7 @@ static int get_packet_to_combine(netcoding_node* node,
         &node->combination_buffer, &inbound_packet->header, packet_to_combine);
 
     if(!found_combined_fitting) {
-    return pop_fitting_packet(
+        return pop_fitting_packet(
             &node->raw_buffer, &inbound_packet->header, packet_to_combine);
     }
     return found_combined_fitting;
@@ -98,10 +97,13 @@ static netcoding_packet* route_packet(netcoding_node* node,
     if(should_combine_packet(node)) {
         netcoding_packet packet_to_combine;
         if(get_packet_to_combine(node, packet, &packet_to_combine)) {
+            printf("Combinou\n");
             return combine_packets(packet, &packet_to_combine);
         }
 
-        // TODO: store_packet(node, packet);
+        if(store_packet(node, packet)) {
+            printf("Armazenou\n");
+        }
         return NULL;
     }
     return packet;

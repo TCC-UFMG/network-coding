@@ -77,7 +77,12 @@ static void print_header(netcoding_packet_header* header) {
 static void print_packet(netcoding_packet* packet) {
     printf("Header: [");
     print_header(&packet->header);
-    printf("], Body: \"%s\"", packet->body);
+    printf("], Body: [");
+    for(int i = 0; i < PAYLOAD_SIZE; i++) {
+        printf("%d", packet->body[i]);
+        if(i < PAYLOAD_SIZE - 1) printf(",");
+    }
+    printf("]");
 }
 
 static netcoding_packet create_packet(uint32_t packet_id, const char* message) {

@@ -106,7 +106,7 @@ static int pop_fitting_packet(packet_buffer* buffer,
 static int push_packet(packet_buffer* buffer, netcoding_packet* packet) {
     if(buffer->size == NETCODING_WINDOW_SIZE) return 0;
     netcoding_packet* _;
-    if(find_packet(buffer, packet, _)) return 1;
+    if(find_packet(buffer, packet, _)) return 0;
 
     linked_list_node* node =
         (linked_list_node*)malloc(sizeof(linked_list_node));
