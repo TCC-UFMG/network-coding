@@ -78,7 +78,7 @@ void MAC_route_packet(char *data) {
   printf("\n");
 
   netcoding_packet *packet_to_route =
-      route_packet(&network_coding_node, packet);
+      encode_packet(&network_coding_node, packet);
 
   // Interrupts the routing process
   if (packet_to_route == NULL) {

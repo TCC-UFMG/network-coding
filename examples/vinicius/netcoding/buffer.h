@@ -133,4 +133,27 @@ static int push_packet(packet_buffer* buffer, netcoding_packet* packet) {
     return 1;
 }
 
+static void clear_list(struct linked_list_t* list) {
+    linked_list_node* cur_node = list->head;
+
+    while(cur_node) {
+        linked_list_node* tmp = cur_node->next;
+        free(cur_node->data);
+        free(cur_node);
+        cur_node = tmp;
+    }
+    free(list);
+}
+
+static void iterate_over_list(struct linked_list_t* list,
+                              void (*iterator_callback)(linked_list_node*)) {
+    linked_list_node* cur_node = list->head;
+
+    while(cur_node) {
+        iterator_callback(cur_node);
+
+        cur_node = cur_node->next;
+    }
+}
+
 #endif /* NET_CODING_BUFFER_H_ */

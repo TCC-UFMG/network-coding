@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "../../netcoding/hash_table.h"
 #include "../../netcoding/netcoding.h"
 #include "../../netcoding/utils.h"
 #include "contiki-lib.h"
@@ -25,6 +26,17 @@ static struct simple_udp_connection udp_connection;
 PROCESS(udp_server_process, "UDP 2xor network coding receiver");
 AUTOSTART_PROCESSES(&udp_server_process);
 /*---------------------------------------------------------------------------*/
+static void handle_decoded_packet(linked_list_node *node) {
+    netcoding_packet *packet = (netcoding_packet *)node->data;
+    uip_ip6addr_t sender_addr;
+    uip_ip6addr(&sender_addr, 0xfd00, 0, 0, 0, 0X201, 0X0, 0X0, 0X0);
+
+    netcoding_log_format("RECV-D", network_coding_node.id, 1, &sender_addr);
+
+    print_packet(packet);
+    printf("\n");
+}
+
 static void receiver_callback(struct simple_udp_connection *c,
                               const uip_ipaddr_t *sender_addr,
                               uint16_t sender_port,
@@ -39,6 +51,16 @@ static void receiver_callback(struct simple_udp_connection *c,
         "RECV  ", network_coding_node.id, 1, (uip_ip6addr_t *)sender_addr);
     print_packet(&packet);
     printf("\n");
+
+    struct linked_list_t *decoded_packets =
+        decode_packet(&network_coding_node, &packet);
+
+    if(decoded_packets->size) {
+        printf("DECODED PACKETS:\n");
+        iterate_over_list(decoded_packets, handle_decoded_packet);
+    }
+
+    clear_list(decoded_packets);
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(udp_server_process, ev, data) {

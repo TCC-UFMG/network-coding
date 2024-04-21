@@ -2,10 +2,11 @@
 #define NET_CODING_H_
 
 #include "buffer.h"
+#include "hash_table.h"
 #include "node.h"
 #include "packet.h"
 
-/* ------------------- IMPLEMENTATION --------------------------------------- */
+/* ------------------- CODING ----------------------------------------------- */
 /**
  * @brief Stores a packet inside a node. If the packet is raw, it goes to the
  * raw_buffer and combination_buffer otherwise.
@@ -92,9 +93,10 @@ static netcoding_packet* combine_packets(netcoding_packet* pck1,
  * @param packet The packet to be routed.
  * @return netcoding_packet
  */
-static netcoding_packet* route_packet(netcoding_node* node,
-                                      netcoding_packet* packet) {
-    if(should_combine_packet(node)) {
+static netcoding_packet* encode_packet(netcoding_node* node,
+                                       netcoding_packet* packet) {
+    if(  // TODO: packet->header.can_be_combined ||
+        should_combine_packet(node)) {
         netcoding_packet packet_to_combine;
         if(get_packet_to_combine(node, packet, &packet_to_combine)) {
             printf("Combinou\n");
@@ -107,6 +109,66 @@ static netcoding_packet* route_packet(netcoding_node* node,
         return NULL;
     }
     return packet;
+}
+
+/* ------------------- DECODING --------------------------------------------- */
+static void deep_copy(void* item, void** dest) {}
+
+static size_t facade_hash_calculator(void* data) {
+    return packet_hash((netcoding_packet*)data);
+}
+
+static void** array_allocator(int size) {
+    return (void**)malloc(size * sizeof(netcoding_packet**));
+}
+
+static int is_header_collision(void* data1, void* data2) {
+    netcoding_packet_header* h1 = (netcoding_packet_header*)data1;
+    netcoding_packet_header* h2 = (netcoding_packet_header*)data2;
+    return are_equivalent_headers(h1, h2);
+}
+
+static void fill_with_existing_packets(hash_table* map, netcoding_node* node) {
+    linked_list_node* cur_node = node->raw_buffer.head;
+
+    while(cur_node) {
+        try_insert_item(map, cur_node->data);
+        cur_node = cur_node->next;
+    }
+
+    cur_node = node->combination_buffer.head;
+    while(cur_node) {
+        try_insert_item(map, cur_node->data);
+        cur_node = cur_node->next;
+    }
+}
+
+static struct linked_list_t* decode_packet(netcoding_node* node,
+                                           netcoding_packet* packet) {
+    struct linked_list_t *decoded_packets = (struct linked_list_t*)malloc(
+                             sizeof(struct linked_list_t)),
+                         *packets_to_decode = (struct linked_list_t*)malloc(
+                             sizeof(struct linked_list_t));
+    // List with the next batch of packets to be decoded
+    push_packet(packets_to_decode, packet);
+
+    // Creates aa hashtable holding all the current packets in the node
+    hash_table already_processed_packets =
+        create_hash_table(NETCODING_WINDOW_SIZE * 3,
+                          is_header_collision,
+                          array_allocator,
+                          facade_hash_calculator,
+                          deep_copy);
+    fill_with_existing_packets(&already_processed_packets, node);
+
+    while(packets_to_decode->size) {
+        linked_list_node* cur_node = packets_to_decode->head;
+        while(cur_node) {
+            cur_node = cur_node->next;
+        }
+    }
+
+    return decoded_packets;
 }
 
 #endif /* NET_CODING_H_ */

@@ -202,4 +202,13 @@ static int is_raw_packet(netcoding_packet* packet) {
     return packet->header.holding_packets[1] == EMPTY_PACKET_ID;
 }
 
+static size_t packet_hash(netcoding_packet* packet) {
+    size_t seed = NUM_COMBINATIONS;
+    for(int i = 0; i < NUM_COMBINATIONS; i++) {
+        seed ^= packet->header.holding_packets[i] + 0x9e3779b9 + (seed << 6)
+                + (seed >> 2);
+    }
+    return seed;
+}
+
 #endif /* NET_CODING_PACKET_H_ */
