@@ -133,7 +133,7 @@ static int push_packet(packet_buffer* buffer, netcoding_packet* packet) {
     return 1;
 }
 
-static void clear_list(struct linked_list_t* list) {
+static void free_list(struct linked_list_t* list) {
     linked_list_node* cur_node = list->head;
 
     while(cur_node) {
@@ -143,6 +143,33 @@ static void clear_list(struct linked_list_t* list) {
         cur_node = tmp;
     }
     free(list);
+}
+
+static void clear_list(struct linked_list_t* list) {
+    linked_list_node* cur_node = list->head;
+
+    while(cur_node) {
+        linked_list_node* tmp = cur_node->next;
+        free(cur_node->data);
+        free(cur_node);
+        cur_node = tmp;
+    }
+    list->head = NULL;
+    list->tail = NULL;
+    list->size = 0;
+}
+
+static void transfer_list(struct linked_list_t* from,
+                          struct linked_list_t* to) {
+    to->head = from->head;
+    to->tail = from->tail;
+    to->size = from->size;
+}
+
+static void reset_list(struct linked_list_t* list) {
+    list->head = NULL;
+    list->tail = NULL;
+    list->size = 0;
 }
 
 static void iterate_over_list(struct linked_list_t* list,

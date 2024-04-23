@@ -53,14 +53,14 @@ static void receiver_callback(struct simple_udp_connection *c,
     printf("\n");
 
     struct linked_list_t *decoded_packets =
-        decode_packet(&network_coding_node, &packet);
+        decode_packets(&network_coding_node, &packet);
 
     if(decoded_packets->size) {
         printf("DECODED PACKETS:\n");
         iterate_over_list(decoded_packets, handle_decoded_packet);
     }
 
-    clear_list(decoded_packets);
+    free_list(decoded_packets);
 }
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(udp_server_process, ev, data) {

@@ -113,8 +113,10 @@ static netcoding_packet create_packet(uint32_t packet_id, const char* message) {
  */
 static int get_header_num_packets(netcoding_packet_header* header) {
     int num_pckt = 0;
-    for(int i = 0; i < NUM_COMBINATIONS; i++)
-        if(header->holding_packets[i] != EMPTY_PACKET_ID) num_pckt++;
+    for(int i = 0; i < NUM_COMBINATIONS; i++) {
+        if(header->holding_packets[i] == EMPTY_PACKET_ID) break;
+        num_pckt++;
+    }
     return num_pckt;
 }
 
@@ -169,25 +171,56 @@ static int are_equivalent_headers(netcoding_packet_header* inboud_header,
 
 /**
  * @brief Merge two headers, returning a new one with the union of both packets
- * holding_packets ids. This function assumes both headers agree with the rule
- * 1 in the `are_fitting_headers` function description.
+ * holding_packets ids. Notice that here the XOR logic is applied, then if a
+ * packet `A` appears in both headers, it will no appear in the resulting
+ * header. This function assumes both headers agree with the rule 1 in the
+ * `are_fitting_headers` function description.
  *
  * @param h1 The header 1.
  * @param h2 The header 2.
  * @return netcoding_packet_header A packet header with the union of both
  * headers packets ids.
  */
-static netcoding_packet_header merge_headers(netcoding_packet_header* h1,
-                                             netcoding_packet_header* h2) {
+static netcoding_packet_header xor_merge_headers(netcoding_packet_header* h1,
+                                                 netcoding_packet_header* h2) {
     netcoding_packet_header merged;
 
+    // I'm considering it's impossible to each packet to have repeated packets
     int filled_index = 0, i = 0;
-    while(h1->holding_packets[i] != EMPTY_PACKET_ID)
-        merged.holding_packets[filled_index++] = h1->holding_packets[i++];
+    while(h1->holding_packets[i] != EMPTY_PACKET_ID) {
+        int cur_item_count = 1, j = 0;
+
+        while(h2->holding_packets[j] != EMPTY_PACKET_ID) {
+            if(h1->holding_packets[i] == h2->holding_packets[j]) {
+                cur_item_count++;
+            }
+            j++;
+        }
+        // Even number of elements, then xor nullify this packet
+        if(cur_item_count % 2) {
+            merged.holding_packets[filled_index++] = h1->holding_packets[i];
+        }
+
+        i++;
+    }
 
     i = 0;
-    while(h2->holding_packets[i] != EMPTY_PACKET_ID)
-        merged.holding_packets[filled_index++] = h2->holding_packets[i++];
+    while(h2->holding_packets[i] != EMPTY_PACKET_ID) {
+        int cur_item_count = 1, j = 0;
+
+        while(h1->holding_packets[j] != EMPTY_PACKET_ID) {
+            if(h2->holding_packets[i] == h1->holding_packets[j]) {
+                cur_item_count++;
+            }
+            j++;
+        }
+        // Even number of elements, then xor nullify this packet
+        if(cur_item_count % 2) {
+            merged.holding_packets[filled_index++] = h2->holding_packets[i];
+        }
+
+        i++;
+    }
 
     return merged;
 }
@@ -203,12 +236,10 @@ static int is_raw_packet(netcoding_packet* packet) {
 }
 
 static size_t packet_hash(netcoding_packet* packet) {
-    size_t seed = NUM_COMBINATIONS;
-    for(int i = 0; i < NUM_COMBINATIONS; i++) {
-        seed ^= packet->header.holding_packets[i] + 0x9e3779b9 + (seed << 6)
-                + (seed >> 2);
-    }
-    return seed;
+    size_t hash = 0;
+    for(int i = 0; i < NUM_COMBINATIONS; i++)
+        hash += packet->header.holding_packets[i];
+    return hash;
 }
 
 #endif /* NET_CODING_PACKET_H_ */

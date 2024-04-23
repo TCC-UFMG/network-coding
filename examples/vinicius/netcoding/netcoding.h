@@ -75,7 +75,7 @@ static netcoding_packet* combine_packets(netcoding_packet* pck1,
     netcoding_packet* combined_packet =
         (netcoding_packet*)malloc(sizeof(netcoding_packet));
 
-    combined_packet->header = merge_headers(&pck1->header, &pck2->header);
+    combined_packet->header = xor_merge_headers(&pck1->header, &pck2->header);
     xor_combine(pck1->body, pck2->body, combined_packet->body);
 
     return combined_packet;
@@ -143,12 +143,54 @@ static void fill_with_existing_packets(hash_table* map, netcoding_node* node) {
     }
 }
 
-static struct linked_list_t* decode_packet(netcoding_node* node,
-                                           netcoding_packet* packet) {
+static netcoding_packet* resolve_packets(netcoding_packet* pck1,
+                                         netcoding_packet* pck2) {
+    netcoding_packet* combined_packet =
+        (netcoding_packet*)malloc(sizeof(netcoding_packet));
+
+    combined_packet->header = xor_merge_headers(&pck1->header, &pck2->header);
+    xor_combine(pck1->body, pck2->body, combined_packet->body);
+
+    return combined_packet;
+}
+
+void decode_packet_over_map(hash_table* map,
+                            netcoding_packet* packet_to_decode,
+                            struct linked_list_t* packets_to_decode,
+                            struct linke_list_t* output_list) {
+    // Iterate for each already obtained packet in the hashmap
+    for(int i = 0; i < map->capacity; i++) {
+        if(map->keys[i]) {
+            netcoding_packet* mapped_packet = (netcoding_packet*)map->items[i];
+
+            netcoding_packet* resolved_packet =
+                resolve_packets(packet_to_decode, mapped_packet);
+
+            int did_insert = try_insert_item(map, resolved_packet);
+            // This packet was not created yet
+            if(did_insert == 1) {
+                push_packet(packets_to_decode, resolved_packet);
+                // If is a raw packet never found
+                if(get_header_num_packets(&resolved_packet->header) == 1) {
+                    push_packet(output_list, resolved_packet);
+                }
+            }
+            else {
+                free(resolved_packet);
+            }
+        }
+    }
+}
+
+static struct linked_list_t* decode_packets(netcoding_node* node,
+                                            netcoding_packet* packet) {
     struct linked_list_t *decoded_packets = (struct linked_list_t*)malloc(
                              sizeof(struct linked_list_t)),
                          *packets_to_decode = (struct linked_list_t*)malloc(
-                             sizeof(struct linked_list_t));
+                             sizeof(struct linked_list_t)),
+                         *next_packets_to_decode =
+                             (struct linked_list_t*)malloc(
+                                 sizeof(struct linked_list_t));
     // List with the next batch of packets to be decoded
     push_packet(packets_to_decode, packet);
 
@@ -164,9 +206,24 @@ static struct linked_list_t* decode_packet(netcoding_node* node,
     while(packets_to_decode->size) {
         linked_list_node* cur_node = packets_to_decode->head;
         while(cur_node) {
+            netcoding_packet* cur_packet = (netcoding_packet*)cur_node->data;
+
+            decode_packet_over_map(&already_processed_packets,
+                                   cur_packet,
+                                   next_packets_to_decode,
+                                   decoded_packets);
+
             cur_node = cur_node->next;
         }
+
+        // Set the next layer of packets as the current one
+        clear_list(packets_to_decode);
+        transfer_list(next_packets_to_decode, packets_to_decode);
+        reset_list(next_packets_to_decode);
     }
+
+    free_list(packets_to_decode);
+    free_list(next_packets_to_decode);
 
     return decoded_packets;
 }
