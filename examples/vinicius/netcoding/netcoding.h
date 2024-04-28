@@ -112,7 +112,13 @@ static netcoding_packet* encode_packet(netcoding_node* node,
 }
 
 /* ------------------- DECODING --------------------------------------------- */
-static void deep_copy(void* item, void** dest) {}
+static void deep_copy(void* item, void** dest) {
+    netcoding_packet** packet_dest = (netcoding_packet**)dest;
+    netcoding_packet* packet =
+        (netcoding_packet*)malloc(sizeof(netcoding_packet));
+    memcpy(packet, item, sizeof(netcoding_packet));
+    *packet_dest = packet;
+}
 
 static size_t facade_hash_calculator(void* data) {
     return packet_hash((netcoding_packet*)data);
@@ -154,10 +160,10 @@ static netcoding_packet* resolve_packets(netcoding_packet* pck1,
     return combined_packet;
 }
 
-void decode_packet_over_map(hash_table* map,
+static void decode_packet_over_map(hash_table* map,
                             netcoding_packet* packet_to_decode,
                             struct linked_list_t* packets_to_decode,
-                            struct linke_list_t* output_list) {
+                                   struct linked_list_t* output_list) {
     // Iterate for each already obtained packet in the hashmap
     for(int i = 0; i < map->capacity; i++) {
         if(map->keys[i]) {
@@ -191,6 +197,11 @@ static struct linked_list_t* decode_packets(netcoding_node* node,
                          *next_packets_to_decode =
                              (struct linked_list_t*)malloc(
                                  sizeof(struct linked_list_t));
+    start_list(decoded_packets);
+    start_list(packets_to_decode);
+    start_list(next_packets_to_decode);
+
+    store_packet(node, packet);
     // List with the next batch of packets to be decoded
     push_packet(packets_to_decode, packet);
 

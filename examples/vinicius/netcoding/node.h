@@ -45,6 +45,9 @@ extern netcoding_node network_coding_node;
 
 static inline void create_netcoding_node(int id) {
     network_coding_node.id = id;
+    network_coding_node.prob_to_combine = 0;
+    network_coding_node.combination_buffer = create_buffer();
+    network_coding_node.raw_buffer = create_buffer();
 }
 
 static inline void create_netcoding_combinatory_routing_node(int id) {

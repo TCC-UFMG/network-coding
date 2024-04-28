@@ -77,6 +77,7 @@ PROCESS_THREAD(udp_process, ev, data) {
         etimer_reset(&periodic_timer);
         /*====================================================================*/
         if(NETSTACK_ROUTING.node_is_reachable()) {
+            memset(packet_message, 0, PAYLOAD_SIZE);
             sprintf(packet_message, "Message %d from %d", packet_id, node_id);
             packet = create_packet(packet_id, packet_message);
             memcpy(buffer, &packet, sizeof(packet));

@@ -85,6 +85,12 @@ static void print_packet(netcoding_packet* packet) {
     printf("]");
 }
 
+static void print_packet_str(netcoding_packet* packet) {
+    printf("Header: [");
+    print_header(&packet->header);
+    printf("], Body: \"%s\"", packet->body);
+}
+
 static netcoding_packet create_packet(uint32_t packet_id, const char* message) {
     netcoding_packet packet;
     strcpy(packet.preamble, PACKET_PREAMBLE);

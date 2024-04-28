@@ -26,10 +26,15 @@ typedef struct linked_list_t {
     int size;
 } packet_buffer;
 
+static void start_list(struct linked_list_t* list) {
+    list->head = NULL;
+    list->tail = NULL;
+    list->size = 0;
+}
+
 static packet_buffer create_buffer() {
     packet_buffer buffer;
-    buffer.head = NULL;
-    buffer.size = 0;
+    start_list(&buffer);
     return buffer;
 }
 

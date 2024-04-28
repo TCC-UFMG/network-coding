@@ -149,13 +149,20 @@ static void clean_hash_table(hash_table* hash_table) {
 }
 
 static void print_hash_table(hash_table* hash_table) {
-    printf("{");
+    printf("HashTable: {\n");
     for(int i = 0; i < hash_table->capacity; i++) {
-        printf("\t[%lu] -> %s\n",
-               hash_table->keys[i],
-               ((char**)hash_table->items)[i]);
+        if(hash_table->keys[i]) {
+            printf("\t[%lu] -> ", hash_table->keys[i]);
+            netcoding_packet* packet =
+                ((netcoding_packet**)hash_table->items)[i];
+            print_packet_str(packet);
+            printf("\n");
+        }
+        else {
+            printf("\t[0] -> NULL\n");
+        }
     }
-    printf("}\n\n");
+    printf("}\n");
 }
 
 #endif /* HASH_TABLE_H_ */

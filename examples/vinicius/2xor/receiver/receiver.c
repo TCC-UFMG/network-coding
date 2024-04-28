@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include "../../netcoding/hash_table.h"
 #include "../../netcoding/netcoding.h"
 #include "../../netcoding/utils.h"
 #include "contiki-lib.h"
@@ -37,6 +36,13 @@ static void handle_decoded_packet(linked_list_node *node) {
     printf("\n");
 }
 
+static void print_headers(linked_list_node *node) {
+    netcoding_packet *packet = (netcoding_packet *)node->data;
+    printf("[");
+    print_header(&packet->header);
+    printf("],");
+}
+
 static void receiver_callback(struct simple_udp_connection *c,
                               const uip_ipaddr_t *sender_addr,
                               uint16_t sender_port,
@@ -62,7 +68,7 @@ static void receiver_callback(struct simple_udp_connection *c,
 
     free_list(decoded_packets);
 }
-/*---------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 PROCESS_THREAD(udp_server_process, ev, data) {
     create_netcoding_normal_routing_node(node_id);
 
