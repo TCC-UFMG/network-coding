@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd ./normal
+cd ../normal
 rm -dr build
 cd ../receiver
 rm -dr build

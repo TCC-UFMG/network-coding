@@ -190,13 +190,16 @@ static int are_equivalent_headers(netcoding_packet_header* inboud_header,
 static netcoding_packet_header xor_merge_headers(netcoding_packet_header* h1,
                                                  netcoding_packet_header* h2) {
     netcoding_packet_header merged;
+    for(int i = 0; i < NUM_COMBINATIONS; i++)
+        merged.holding_packets[i] = EMPTY_PACKET_ID;
 
     // I'm considering it's impossible to each packet to have repeated packets
     int filled_index = 0, i = 0;
-    while(h1->holding_packets[i] != EMPTY_PACKET_ID) {
+    while(h1->holding_packets[i] != EMPTY_PACKET_ID && i < NUM_COMBINATIONS) {
         int cur_item_count = 1, j = 0;
 
-        while(h2->holding_packets[j] != EMPTY_PACKET_ID) {
+        while(h2->holding_packets[j] != EMPTY_PACKET_ID
+              && j < NUM_COMBINATIONS) {
             if(h1->holding_packets[i] == h2->holding_packets[j]) {
                 cur_item_count++;
             }
@@ -210,11 +213,15 @@ static netcoding_packet_header xor_merge_headers(netcoding_packet_header* h1,
         i++;
     }
 
+    // !TODO: Se um dia puder ter 2A+B por exemplo, isso aq vai ter q ser
+    // alterado, pois se tiver  A em um pacote e 2A em outro, o resultado final
+    // vai ter 2A (1 da primeira iteração e outro dessa abaixo).
     i = 0;
-    while(h2->holding_packets[i] != EMPTY_PACKET_ID) {
+    while(h2->holding_packets[i] != EMPTY_PACKET_ID && i < NUM_COMBINATIONS) {
         int cur_item_count = 1, j = 0;
 
-        while(h1->holding_packets[j] != EMPTY_PACKET_ID) {
+        while(h1->holding_packets[j] != EMPTY_PACKET_ID
+              && j < NUM_COMBINATIONS) {
             if(h2->holding_packets[i] == h1->holding_packets[j]) {
                 cur_item_count++;
             }

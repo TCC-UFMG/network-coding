@@ -171,12 +171,6 @@ static void transfer_list(struct linked_list_t* from,
     to->size = from->size;
 }
 
-static void reset_list(struct linked_list_t* list) {
-    list->head = NULL;
-    list->tail = NULL;
-    list->size = 0;
-}
-
 static void iterate_over_list(struct linked_list_t* list,
                               void (*iterator_callback)(linked_list_node*)) {
     linked_list_node* cur_node = list->head;

@@ -113,11 +113,16 @@ static netcoding_packet* encode_packet(netcoding_node* node,
 
 /* ------------------- DECODING --------------------------------------------- */
 static void deep_copy(void* item, void** dest) {
+    //! Assumes the item will be freed
+    // netcoding_packet** packet_dest = (netcoding_packet**)dest;
+    // netcoding_packet* packet =
+    //     (netcoding_packet*)malloc(sizeof(netcoding_packet));
+    // memcpy(packet, item, sizeof(netcoding_packet));
+    // *packet_dest = packet;
+
+    //! Assumes item will be mantained allocated
     netcoding_packet** packet_dest = (netcoding_packet**)dest;
-    netcoding_packet* packet =
-        (netcoding_packet*)malloc(sizeof(netcoding_packet));
-    memcpy(packet, item, sizeof(netcoding_packet));
-    *packet_dest = packet;
+    *packet_dest = item;
 }
 
 static size_t facade_hash_calculator(void* data) {
@@ -129,9 +134,9 @@ static void** array_allocator(int size) {
 }
 
 static int is_header_collision(void* data1, void* data2) {
-    netcoding_packet_header* h1 = (netcoding_packet_header*)data1;
-    netcoding_packet_header* h2 = (netcoding_packet_header*)data2;
-    return are_equivalent_headers(h1, h2);
+    netcoding_packet* h1 = (netcoding_packet*)data1;
+    netcoding_packet* h2 = (netcoding_packet*)data2;
+    return are_equivalent_headers(&h1->header, &h2->header);
 }
 
 static void fill_with_existing_packets(hash_table* map, netcoding_node* node) {
@@ -161,8 +166,8 @@ static netcoding_packet* resolve_packets(netcoding_packet* pck1,
 }
 
 static void decode_packet_over_map(hash_table* map,
-                            netcoding_packet* packet_to_decode,
-                            struct linked_list_t* packets_to_decode,
+                                   netcoding_packet* packet_to_decode,
+                                   struct linked_list_t* packets_to_decode,
                                    struct linked_list_t* output_list) {
     // Iterate for each already obtained packet in the hashmap
     for(int i = 0; i < map->capacity; i++) {
@@ -172,12 +177,16 @@ static void decode_packet_over_map(hash_table* map,
             netcoding_packet* resolved_packet =
                 resolve_packets(packet_to_decode, mapped_packet);
 
+            int header_size = get_header_num_packets(&resolved_packet->header);
+
+            if(!header_size) continue;
+
             int did_insert = try_insert_item(map, resolved_packet);
             // This packet was not created yet
             if(did_insert == 1) {
                 push_packet(packets_to_decode, resolved_packet);
                 // If is a raw packet never found
-                if(get_header_num_packets(&resolved_packet->header) == 1) {
+                if(header_size == 1) {
                     push_packet(output_list, resolved_packet);
                 }
             }
@@ -213,6 +222,7 @@ static struct linked_list_t* decode_packets(netcoding_node* node,
                           facade_hash_calculator,
                           deep_copy);
     fill_with_existing_packets(&already_processed_packets, node);
+    print_hash_table(&already_processed_packets);
 
     while(packets_to_decode->size) {
         linked_list_node* cur_node = packets_to_decode->head;
@@ -224,13 +234,15 @@ static struct linked_list_t* decode_packets(netcoding_node* node,
                                    next_packets_to_decode,
                                    decoded_packets);
 
+            print_hash_table(&already_processed_packets);
+
             cur_node = cur_node->next;
         }
 
         // Set the next layer of packets as the current one
         clear_list(packets_to_decode);
         transfer_list(next_packets_to_decode, packets_to_decode);
-        reset_list(next_packets_to_decode);
+        start_list(next_packets_to_decode);
     }
 
     free_list(packets_to_decode);
