@@ -8,3 +8,5 @@ cd ../router
 rm -dr build
 cd ../sender
 rm -dr build
+cd ../root
+rm -dr build

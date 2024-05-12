@@ -6,10 +6,16 @@
 #include "node.h"
 #include "packet.h"
 
+/**
+ * @brief The receivers are the NUM_RECEIVERS-th first nodes.
+ *
+ */
+#define NUM_RECEIVERS 5
+
 /* ------------------- CODING ----------------------------------------------- */
 /**
- * @brief Stores a packet inside a node. If the packet is raw, it goes to the
- * raw_buffer and combination_buffer otherwise.
+ * @brief Stores a packet inside a node. If the packet is raw, it goes to
+ * the raw_buffer and combination_buffer otherwise.
  *
  * @param node
  * @param packet

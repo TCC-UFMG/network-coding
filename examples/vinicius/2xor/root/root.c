@@ -25,24 +25,6 @@ static struct simple_udp_connection udp_connection;
 PROCESS(udp_server_process, "UDP 2xor network coding receiver");
 AUTOSTART_PROCESSES(&udp_server_process);
 /*---------------------------------------------------------------------------*/
-static void handle_decoded_packet(linked_list_node *node) {
-    netcoding_packet *packet = (netcoding_packet *)node->data;
-    uip_ip6addr_t sender_addr;
-    uip_ip6addr(&sender_addr, 0xfd00, 0, 0, 0, 0X201, 0X0, 0X0, 0X0);
-
-    netcoding_log_format("RECV-D", network_coding_node.id, 1, &sender_addr);
-
-    print_packet_str(packet);
-    printf("\n");
-}
-
-static void print_headers(linked_list_node *node) {
-    netcoding_packet *packet = (netcoding_packet *)node->data;
-    printf("[");
-    print_header(&packet->header);
-    printf("],");
-}
-
 static void receiver_callback(struct simple_udp_connection *c,
                               const uip_ipaddr_t *sender_addr,
                               uint16_t sender_port,
@@ -54,19 +36,9 @@ static void receiver_callback(struct simple_udp_connection *c,
     memcpy(&packet, data, PACKET_SIZE);
 
     netcoding_log_format(
-        "RECV  ", network_coding_node.id, 1, (uip_ip6addr_t *)sender_addr);
+        "ROOT  ", network_coding_node.id, 1, (uip_ip6addr_t *)sender_addr);
     print_packet(&packet);
     printf("\n");
-
-    struct linked_list_t *decoded_packets =
-        decode_packets(&network_coding_node, &packet);
-
-    if(decoded_packets->size) {
-        printf("DECODED PACKETS:\n");
-        iterate_over_list(decoded_packets, handle_decoded_packet);
-    }
-
-    free_list(decoded_packets);
 }
 /*----------------------------------------------------------------------------*/
 PROCESS_THREAD(udp_server_process, ev, data) {
@@ -79,6 +51,7 @@ PROCESS_THREAD(udp_server_process, ev, data) {
     printf("\n");
 
     /* Initialize DAG root */
+    NETSTACK_ROUTING.root_start();
     NETSTACK_MAC.on();
 
     /* Initialize UDP connection */
