@@ -144,6 +144,12 @@ static void* find_item(hash_table* hash_table, void* item) {
 }
 
 static void clean_hash_table(hash_table* hash_table) {
+    for(int i = 0; i < hash_table->capacity; i++) {
+        if(hash_table->keys[i] != 0) {
+            free(hash_table->items[i]);
+        }
+    }
+
     free(hash_table->keys);
     free(hash_table->items);
 }

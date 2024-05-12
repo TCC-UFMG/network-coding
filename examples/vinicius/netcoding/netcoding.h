@@ -114,15 +114,15 @@ static netcoding_packet* encode_packet(netcoding_node* node,
 /* ------------------- DECODING --------------------------------------------- */
 static void deep_copy(void* item, void** dest) {
     //! Assumes the item will be freed
-    // netcoding_packet** packet_dest = (netcoding_packet**)dest;
-    // netcoding_packet* packet =
-    //     (netcoding_packet*)malloc(sizeof(netcoding_packet));
-    // memcpy(packet, item, sizeof(netcoding_packet));
-    // *packet_dest = packet;
+    netcoding_packet** packet_dest = (netcoding_packet**)dest;
+    netcoding_packet* packet =
+        (netcoding_packet*)malloc(sizeof(netcoding_packet));
+    memcpy(packet, item, sizeof(netcoding_packet));
+    *packet_dest = packet;
 
     //! Assumes item will be mantained allocated
-    netcoding_packet** packet_dest = (netcoding_packet**)dest;
-    *packet_dest = item;
+    //     netcoding_packet** packet_dest = (netcoding_packet**)dest;
+    //     *packet_dest = item;
 }
 
 static size_t facade_hash_calculator(void* data) {
@@ -222,7 +222,6 @@ static struct linked_list_t* decode_packets(netcoding_node* node,
                           facade_hash_calculator,
                           deep_copy);
     fill_with_existing_packets(&already_processed_packets, node);
-    print_hash_table(&already_processed_packets);
 
     while(packets_to_decode->size) {
         linked_list_node* cur_node = packets_to_decode->head;
@@ -233,8 +232,6 @@ static struct linked_list_t* decode_packets(netcoding_node* node,
                                    cur_packet,
                                    next_packets_to_decode,
                                    decoded_packets);
-
-            print_hash_table(&already_processed_packets);
 
             cur_node = cur_node->next;
         }
@@ -247,6 +244,7 @@ static struct linked_list_t* decode_packets(netcoding_node* node,
 
     free_list(packets_to_decode);
     free_list(next_packets_to_decode);
+    clean_hash_table(&already_processed_packets);
 
     return decoded_packets;
 }
