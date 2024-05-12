@@ -79,7 +79,7 @@ static void print_packet(netcoding_packet* packet) {
     print_header(&packet->header);
     printf("], Body: [");
     for(int i = 0; i < PAYLOAD_SIZE; i++) {
-        printf("%d", packet->body[i]);
+        printf("%x", packet->body[i]);
         if(i < PAYLOAD_SIZE - 1) printf(",");
     }
     printf("]");

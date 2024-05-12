@@ -40,11 +40,9 @@ static void receiver_callback(struct simple_udp_connection *c,
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(udp_process, ev, data) {
     static struct etimer periodic_timer;
-    uip_ipaddr_t dest_ipaddr;
+    static uip_ipaddr_t dest_ipaddr;
 
     create_netcoding_normal_routing_node(node_id);
-
-    uip_ip6addr(&dest_ipaddr, 0xfd00, 0, 0, 0, 0X201, 0X1, 0X1, 0X1);
 
     PROCESS_BEGIN();
 
@@ -75,6 +73,18 @@ PROCESS_THREAD(udp_process, ev, data) {
 
         PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
         etimer_reset(&periodic_timer);
+
+        uint16_t recv_id = 1 + rand() % NUM_RECEIVERS;
+        uip_ip6addr(&dest_ipaddr,
+                    0xfd00,
+                    0,
+                    0,
+                    0,
+                    0X200 + recv_id,
+                    recv_id,
+                    recv_id,
+                    recv_id);
+
         /*====================================================================*/
         if(NETSTACK_ROUTING.node_is_reachable()) {
             memset(packet_message, 0, PAYLOAD_SIZE);
