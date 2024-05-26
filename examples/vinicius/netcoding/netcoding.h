@@ -276,6 +276,7 @@ static struct linked_list_t* decode_packets(netcoding_node* node,
     start_list(next_packets_to_decode);
 
     store_packet(node, packet);
+    push_packet(decoded_packets, packet);
     // List with the next batch of packets to be decoded
     push_packet(packets_to_decode, packet);
 
