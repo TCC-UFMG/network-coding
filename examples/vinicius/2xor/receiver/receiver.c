@@ -34,6 +34,13 @@ static void handle_decoded_packet(linked_list_node *node) {
 
     print_packet_str(packet);
     printf("\n");
+
+    //===========BENCHMARK======================================================
+    char registry_str[REGISTRY_MAX_SIZE];
+    create_received_registry(network_coding_node.id,
+                             packet->header.holding_packets[0],
+                             registry_str);
+    add_benchmark_registry(registry_str);
 }
 
 static void print_headers(linked_list_node *node) {
@@ -71,6 +78,12 @@ static void receiver_callback(struct simple_udp_connection *c,
 /*----------------------------------------------------------------------------*/
 PROCESS_THREAD(udp_server_process, ev, data) {
     create_netcoding_normal_routing_node(node_id);
+
+    sprintf(benchmark_filename,
+            "../../examples/vinicius/2xor/benchmarks/teste-1.csv");
+    if(network_coding_node.id == 1) {
+        create_benchmark_registry();
+    }
 
     PROCESS_BEGIN();
 

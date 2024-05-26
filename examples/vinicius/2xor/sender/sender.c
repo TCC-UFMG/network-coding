@@ -67,10 +67,6 @@ PROCESS_THREAD(udp_process, ev, data) {
     static char buffer[PACKET_SIZE];
 
     while(1) {
-        // Make sure no packet is going to have and invalid id
-        // packet_id++;
-        // packet_id %= EMPTY_PACKET_ID;
-
         PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
         etimer_reset(&periodic_timer);
 
