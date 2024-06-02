@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "../../netcoding/netcoding.h"
 #include "../../netcoding/utils.h"
+#include "../../utils/benchmark.h"
 #include "contiki-lib.h"
 #include "contiki-net.h"
 #include "contiki.h"

@@ -40,7 +40,12 @@ void add_benchmark_registry(const char *registry) {
 void create_received_registry(int node_id,
                               int msg_id,
                               char output[REGISTRY_MAX_SIZE]) {
-    sprintf(output, "%ld,%d,%d\n", clock_seconds(), node_id, msg_id);
+    clock_time_t time = clock_time();
+    unsigned long seconds = (unsigned long)time / CLOCK_CONF_SECOND;
+    unsigned int miliseconds = (double)(time & (CLOCK_CONF_SECOND - 1))
+                               / CLOCK_CONF_SECOND
+                               * 1000;  // the 7 last bits are ms
+    sprintf(output, "%ld.%d,%d,%d\n", seconds, miliseconds, node_id, msg_id);
 }
 
 #endif
