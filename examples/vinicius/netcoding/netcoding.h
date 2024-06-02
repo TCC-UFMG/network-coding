@@ -10,7 +10,12 @@
  * @brief The receivers are the NUM_RECEIVERS-th first nodes.
  *
  */
-#define NUM_RECEIVERS 5
+#define NUM_RECEIVERS 2
+/**
+ * @brief The number of senders is equivalent to the number of messagens sent
+ *
+ */
+#define NUM_SENDERS 1
 
 /* ------------------- CODING ----------------------------------------------- */
 /**

@@ -45,6 +45,7 @@
 
 #include "examples/vinicius/netcoding/netcoding.h"
 #include "examples/vinicius/netcoding/utils.h"
+#include "examples/vinicius/utils/benchmark.h"
 #include "net/ipv6/uip-sr.h"
 #include "net/packetbuf.h"
 #include "net/routing/routing.h"
@@ -84,6 +85,7 @@ void MAC_route_packet(char *data) {
   if (packet_to_route == NULL) {
     drop_packet();
   } else {
+    increment_packets_count();
     memcpy(data, packet_to_route, PACKET_SIZE);
     free(packet_to_route);
   }

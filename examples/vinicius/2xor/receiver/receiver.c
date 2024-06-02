@@ -37,11 +37,26 @@ static void handle_decoded_packet(linked_list_node *node) {
     printf("\n");
 
     //===========BENCHMARK======================================================
-    char registry_str[REGISTRY_MAX_SIZE];
-    create_received_registry(network_coding_node.id,
-                             packet->header.holding_packets[0],
-                             registry_str);
-    add_benchmark_registry(registry_str);
+    uint32_t packet_id = packet->header.holding_packets[0];
+    if(!msg_was_received(node_id - 1, packet_id)) {
+        int num_completed = mark_msg_as_received(node_id - 1, packet_id);
+
+        char registry_str[REGISTRY_MAX_SIZE];
+        create_received_registry(network_coding_node.id,
+                                 packet->header.holding_packets[0],
+                                 registry_str);
+        add_benchmark_registry(registry_str);
+
+        // If everybody received every message, then no one will enter this
+        // wrapping if, then no more registration is going to be done and
+        // ultimatily we can register in the last line the number of packets
+        // transmitted
+        if(num_completed == NUM_RECEIVERS * NUM_SENDERS) {
+            long global_count = get_global_packet_count();
+            sprintf(registry_str, "%ld\n", global_count);
+            add_benchmark_registry(registry_str);
+        }
+    }
 }
 
 static void print_headers(linked_list_node *node) {

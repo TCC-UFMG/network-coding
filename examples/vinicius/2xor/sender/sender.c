@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "../../netcoding/netcoding.h"
+#include "../../utils/benchmark.h"
 #include "contiki-lib.h"
 #include "contiki-net.h"
 #include "contiki.h"
@@ -70,7 +71,11 @@ PROCESS_THREAD(udp_process, ev, data) {
         PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&periodic_timer));
         etimer_reset(&periodic_timer);
 
-        uint16_t recv_id = 1 + rand() % NUM_RECEIVERS;
+        uint16_t recv_id;
+        do {
+            recv_id = 1 + rand() % NUM_RECEIVERS;
+        } while(msg_was_received(recv_id - 1, packet_id));
+
         uip_ip6addr(&dest_ipaddr,
                     0xfd00,
                     0,
