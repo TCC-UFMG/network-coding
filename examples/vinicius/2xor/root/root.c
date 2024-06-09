@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "../../netcoding/netcoding.h"
 #include "../../netcoding/utils.h"
+#include "../../utils/benchmark.h"
 #include "contiki-lib.h"
 #include "contiki-net.h"
 #include "contiki.h"
@@ -21,6 +22,7 @@
 #define LOG_LEVEL LOG_LEVEL_INFO
 
 static struct simple_udp_connection udp_connection;
+benchmark_send_control *benchmark_tx_control;
 
 PROCESS(udp_server_process, "UDP 2xor network coding receiver");
 AUTOSTART_PROCESSES(&udp_server_process);
@@ -45,6 +47,8 @@ PROCESS_THREAD(udp_server_process, ev, data) {
     create_netcoding_normal_routing_node(node_id);
 
     PROCESS_BEGIN();
+
+    get_heap_benchmark_control();
 
     printf("PACKET SIZE = %d in node %d with ip ", (int)PACKET_SIZE, node_id);
     log_6addr(&uip_ds6_get_link_local(-1)->ipaddr);

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "../../netcoding/netcoding.h"
 #include "../../netcoding/utils.h"
+#include "../../utils/benchmark.h"
 #include "contiki-lib.h"
 #include "contiki-net.h"
 #include "contiki.h"
@@ -23,6 +24,7 @@
 static struct simple_udp_connection udp_connection;
 static char buffer[PACKET_SIZE];
 static uip_ipaddr_t addr;
+benchmark_send_control *benchmark_tx_control;
 
 /*---------------------------------------------------------------------------*/
 PROCESS(udp_process, "UDP 2xor network coding normal");
@@ -49,6 +51,8 @@ PROCESS_THREAD(udp_process, ev, data) {
     create_netcoding_normal_routing_node(node_id);
 
     PROCESS_BEGIN();
+
+    get_heap_benchmark_control();
 
     NETSTACK_MAC.on();
 

@@ -22,6 +22,7 @@
 #define LOG_LEVEL LOG_LEVEL_INFO
 
 static struct simple_udp_connection udp_connection;
+benchmark_send_control *benchmark_tx_control;
 
 PROCESS(udp_server_process, "UDP 2xor network coding receiver");
 AUTOSTART_PROCESSES(&udp_server_process);
@@ -98,17 +99,11 @@ PROCESS_THREAD(udp_server_process, ev, data) {
     sprintf(benchmark_filename,
             "../../examples/vinicius/2xor/benchmarks/teste-1.csv");
 
-    if(network_coding_node.id == 1) {
-        benchmark_tx_control =
-            (benchmark_send_control *)malloc(sizeof(benchmark_send_control));
-        create_benchmark_registry();
-        registers_heap_var(benchmark_tx_control);
-    }
-    else {
-        benchmark_tx_control = (benchmark_send_control *)get_heap_var();
-    }
-
     PROCESS_BEGIN();
+
+    if(network_coding_node.id == 1) registers_heap_benchmark_control();
+    else
+        get_heap_benchmark_control();
 
     printf("PACKET SIZE = %d in node %d with ip ", (int)PACKET_SIZE, node_id);
     log_6addr(&uip_ds6_get_link_local(-1)->ipaddr);

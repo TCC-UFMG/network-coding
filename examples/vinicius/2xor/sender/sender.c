@@ -21,6 +21,7 @@
 #define LOG_LEVEL LOG_LEVEL_INFO
 
 static struct simple_udp_connection udp_connection;
+benchmark_send_control *benchmark_tx_control;
 
 /*---------------------------------------------------------------------------*/
 PROCESS(udp_process, "UDP 2xor network coding sender");
@@ -46,6 +47,8 @@ PROCESS_THREAD(udp_process, ev, data) {
     create_netcoding_normal_routing_node(node_id);
 
     PROCESS_BEGIN();
+
+    get_heap_benchmark_control();
 
     NETSTACK_MAC.on();
 
