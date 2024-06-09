@@ -97,8 +97,15 @@ PROCESS_THREAD(udp_server_process, ev, data) {
 
     sprintf(benchmark_filename,
             "../../examples/vinicius/2xor/benchmarks/teste-1.csv");
+
     if(network_coding_node.id == 1) {
+        benchmark_tx_control =
+            (benchmark_send_control *)malloc(sizeof(benchmark_send_control));
         create_benchmark_registry();
+        registers_heap_var(benchmark_tx_control);
+    }
+    else {
+        benchmark_tx_control = (benchmark_send_control *)get_heap_var();
     }
 
     PROCESS_BEGIN();
